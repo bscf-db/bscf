@@ -6,3 +6,6 @@ ENDIF
 IF NOT PLATFORM windows
 POSTBUILD bscf cp version.txt build/bin/version.txt
 ENDIF
+
+BUILTIN whereami
+DEPEND bscf whereami
