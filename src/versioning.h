@@ -28,16 +28,9 @@ void versionSystem(const char* exe) {
     std::cout << version << std::endl;
     versionFile.close();
 
-    // TODO: check if the version on the server is newer than the local version
-    // TODO: prompt the user to update if the server version is newer
-    // TODO: if they accept, we update by downloading the new source code and compiling it using bscf
-    // TODO: if they decline, we continue as normal
-
-    // clone the bscf repo in exepath/bscf_repo
-    // compare the version in version.txt to the version in bscf_repo/version.txt
-    // if the version in bscf_repo/version.txt is newer, prompt the user to update
-    // if they accept, run bscf on the bscf_repo directory to compile the new version
-    // once the new version is compiled, replace the old version with the new version
+    if (std::exists(executablePath / ("old_" + executableName))) {
+        std::filesystem::remove(executablePath / ("old_" + executableName));
+    }
 
     std::path bscfRepoPath = executablePath / "bscf_repo";
     std::cout << "Checking for updates..." << std::endl;
