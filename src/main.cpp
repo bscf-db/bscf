@@ -108,6 +108,7 @@ then the build dir will contain the following:
 #include "compiler.h"
 #include "builtins.h"
 #include "util.h"
+#include "versioning.h"
 
 bool echo = false;
 
@@ -796,15 +797,25 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    versionSystem(argv[0]);
 
     std::path p = ".";
     Compiler c = defaultCompiler();
     std::vector<std::string> commands;
 
     if (argc > 1) {
+        if (argv[1] == "NOUPDATE") {
+            // build current project then exit (used for auto update)
+            std::vector<Target> targets = bscfGenCache(p, c);
+            bscfBuilder builder(targets);
+            builder.build();
+            return 0;
+        }
         p = argv[1];
+
     }
+
+    versionSystem(argv[0]);
+
     if (argc > 2) {
         for (int i = 2; i < argc; i++) {
             commands.emplace_back(argv[i]);

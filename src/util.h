@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <vector>
 #include <iostream>
+#include <regex>
 
 #ifdef _WIN32
 #define NULLIFY_CMD " > NUL 2>&1"
@@ -56,6 +57,14 @@ std::vector<std::path> globDir(const std::path& dir) {
         }
     }
     return files;
+}
+
+std::string strip(std::string s) {
+    // remove leading and trailing whitespace /n/r/t etc
+    s = std::regex_replace(s, std::regex("^\\s+"), "");
+    s = std::regex_replace(s, std::regex("\\s+$"), "");
+    return s;
+
 }
 
 #endif //SRC_UTIL_H
