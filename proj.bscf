@@ -1,1 +1,8 @@
 TARGET EXEC bscf ALL
+
+IF PLATFORM windows
+POSTBUILD bscf copy version.txt build\bin\version.txt
+ENDIF
+IF NOT PLATFORM windows
+POSTBUILD bscf cp version.txt build/bin/version.txt
+ENDIF
