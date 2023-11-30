@@ -16,6 +16,9 @@
 const std::string BSCF_GLFW_DB = "https://github.com/bscf-db/glfw"; // contains only proj.bscf
 const std::string BSCF_GLFW_REPO = "https://github.com/glfw/glfw";
 
+const std::string BSCF_WHEREAMI_DB = "https://gtihub.com/bscf-db/whereami";
+const std::string BSCF_WHEREAMI_REPO = "https://github.com/gpakosz/whereami";
+
 struct bscfBuiltin {
     std::string db;
     std::string repo;
@@ -23,7 +26,8 @@ struct bscfBuiltin {
 };
 
 const std::map<std::string, bscfBuiltin> BSCF_BUILTINS = {
-        {"glfw", {BSCF_GLFW_DB, BSCF_GLFW_REPO, false}}
+        {"glfw", {BSCF_GLFW_DB, BSCF_GLFW_REPO, false}},
+        {"whereami", {BSCF_WHEREAMI_DB, BSCF_WHEREAMI_REPO, false}}
 };
 
 
