@@ -803,7 +803,8 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> commands;
 
     if (argc > 1) {
-        if (argv[1] == "NOUPDATE") {
+        std::cout << "Project path: " << argv[1] << std::endl;
+        if (strcmp(argv[1], "NOUPDATE") == 0) {
             // build current project then exit (used for auto update)
             std::vector<Target> targets = bscfGenCache(p, c);
             bscfBuilder builder(targets);

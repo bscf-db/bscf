@@ -43,7 +43,7 @@ void versionSystem(const char* exe) {
     std::cout << "Checking for updates..." << std::endl;
     std::string cmd;
     if (std::filesystem::exists(bscfRepoPath)) {
-        cmd = "cd " + bscfRepoPath.string() + " && git pull";
+        cmd = "cd " + bscfRepoPath.string() + " && git pull --force" + NULLIFY_CMD;
     } else {
         cmd = "git clone https://github.com/bscf-db/bscf " + bscfRepoPath.string() + NULLIFY_CMD;
     }
@@ -82,6 +82,10 @@ void versionSystem(const char* exe) {
             }
             std::filesystem::rename(executablePath / executableName, executablePath / ("old_" + executableName));
             std::filesystem::copy(bscfRepoPath / "build" / "bin" / executableName, executablePath / executableName);
+            // delete old version.txt
+            std::filesystem::remove(versionPath);
+            // copy new version.txt
+            std::filesystem::copy(bscfRepoPath / "version.txt", versionPath);
             std::cout << "Update complete. Please restart the program." << std::endl;
             exit(0);
         } else {
