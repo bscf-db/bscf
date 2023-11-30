@@ -104,6 +104,7 @@ then the build dir will contain the following:
 #include <fstream>
 #include <sstream>
 #include <regex>
+#include <cstring>
 
 #include "compiler.h"
 #include "builtins.h"
@@ -803,7 +804,6 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> commands;
 
     if (argc > 1) {
-        std::cout << "Project path: " << argv[1] << std::endl;
         if (strcmp(argv[1], "NOUPDATE") == 0) {
             // build current project then exit (used for auto update)
             std::vector<Target> targets = bscfGenCache(p, c);
