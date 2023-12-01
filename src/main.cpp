@@ -574,7 +574,7 @@ std::vector<std::string> bscfResolveIncludes(const Target& t, const std::vector<
     return includes;
 }
 
-std::path bscfGetOuput(const Target& t) {
+std::path bscfGetOutput(const Target& t) {
     switch (t.type) {
         case TargetType::EXEC:
 #ifdef _WIN32
@@ -593,6 +593,7 @@ std::path bscfGetOuput(const Target& t) {
         case TargetType::INTR:
             return "";
     }
+    return "";
 }
 
 std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const std::vector<Target>& targets) {
@@ -679,7 +680,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& obj : objs) {
                 linkCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
-            linkCmd += "-o " + bscfGetOuput(t).string();
+            linkCmd += "-o " + bscfGetOutput(t).string();
             commands.push_back(linkCmd + link_flags);
             std::create_directories(t.path / "build" / "obj");
             std::create_directories(t.path / "build" / "bin");
@@ -689,7 +690,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& source : t.sources) {
                 commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags);
             }
-            std::string arCmd = c.ar + " rcs " + t.path.string() + bscfGetOuput(t).string() + " ";
+            std::string arCmd = c.ar + " rcs " + t.path.string() + bscfGetOutput(t).string() + " ";
             for (const std::string& obj : objs) {
                 arCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
@@ -706,7 +707,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& obj : objs) {
                 linkCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
-            linkCmd += "-o " + bscfGetOuput(t).string();
+            linkCmd += "-o " + bscfGetOutput(t).string();
             commands.push_back(linkCmd + link_flags);
             std::create_directories(t.path / "build" / "obj");
             std::create_directories(t.path / "build" / "bin");
@@ -776,7 +777,7 @@ private:
         // first, check if the target has already been built
         if (!force) {
             // if target's output file exists, then it has already been built
-            std::path outputFile = bscfGetOuput(t);
+            std::path outputFile = bscfGetOutput(t);
             if (std::exists(outputFile)) {
                 // target has already been built
                 return true;
