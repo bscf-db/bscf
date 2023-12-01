@@ -105,6 +105,7 @@ then the build dir will contain the following:
 #include <sstream>
 #include <regex>
 #include <cstring>
+#include <algorithm>
 
 #include "compiler.h"
 #include "builtins.h"
@@ -824,24 +825,36 @@ public:
         this->targets = targets;
     }
 
-    void build() {
+    bool build() {
         for (const Target& t : targets) {
             buildTarget(t);
         }
+        if (!failed.empty()) {
+            return false;
+        }
+        return true;
     }
 
-    void buildTarget(const std::string& target) {
+    bool buildTarget(const std::string& target) {
         for (const Target& t : targets) {
             if (t.name == target) {
                 buildTarget(t, true);
-                return;
+                for (const Target& f : failed) {
+                    if (f.name == t.name) {
+                        return false;
+                    }
+                }
+                return true;
             }
         }
         std::cout << "Target " << target << " not found" << std::endl;
+        return false;
     }
 };
 
 int main(int argc, char* argv[]) {
+
+    int retval = 0;
 
     std::path p = ".";
     Compiler c = defaultCompiler();
@@ -894,7 +907,10 @@ int main(int argc, char* argv[]) {
             std::cout << "Done" << std::endl;
 
             bscfBuilder builder(targets);
-            builder.build();
+            bool f = builder.build();
+            if (!f) {
+                retval = 1;
+            }
         } else if (com == "buildcache" || com == "bc") {
             std::cout << "Generating build files... ";
             std::vector<Target> targets = bscfGenCache(p, c);
@@ -914,9 +930,12 @@ int main(int argc, char* argv[]) {
             std::vector<Target> targets = bscfGenCache(p, c);
             std::cout << "Done" << std::endl;
             bscfBuilder builder(targets);
-            builder.buildTarget(com);
+            bool f = builder.buildTarget(com);
+            if (!f) {
+                retval = 1;
+            }
         }
     }
 
-    return 0;
+    return retval;
 }
