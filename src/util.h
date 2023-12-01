@@ -10,8 +10,14 @@
 
 #ifdef _WIN32
 #define NULLIFY_CMD " > NUL 2>&1"
+// NULLIFY_CMD supresses all output
+// NULLIFY_ERR supresses only normal output, but allows errors
+#define NULLIFY_ERR " > NUL"
 #else
 #define NULLIFY_CMD " > /dev/null 2>&1"
+// NULLIFY_CMD supresses all output
+// NULLIFY_ERR supresses only normal output, but allows errors
+#define NULLIFY_ERR " > /dev/null"
 #endif
 
 #ifdef _WIN32

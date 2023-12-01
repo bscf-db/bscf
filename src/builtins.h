@@ -70,7 +70,11 @@ bool getBuiltin(const std::string& name, const std::path& path) {
         }
         std::filesystem::copy(path / "lib" / name / "bscf-db" / "proj.bscf", path / "lib" / name / "proj.bscf");
         // now delete the bscf-db folder
-        std::filesystem::remove_all(path / "lib" / name / "bscf-db");
+        // if for some reason we can't delete it, that's fine, it's not a big deal so we need to just ignore it
+        try {
+            std::filesystem::remove_all(path / "lib" / name / "bscf-db");
+        } catch (...) {}
+
     }
     return true;
 }

@@ -4,12 +4,22 @@
 
 #include <fstream>
 
+#include "whereami.h"
 #include "util.h"
 
-void versionSystem(const char* exe) {
+void versionSystem() {
     // check if version.txt exists in the same directory as the executable
     // if not print an error message and exit
     // if it does, read the file and print the contents
+
+    int length = wai_getExecutablePath(NULL, 0, NULL);
+    int dirname_length;
+    char* path = (char*)malloc(length + 1);
+    wai_getExecutablePath(path, length, &dirname_length);
+    path[length] = '\0';
+    std::string exe = std::string(path);
+    free(path);
+
 
     std::path executablePath = std::path(exe).parent_path();
     std::path versionPath = executablePath / "version.txt";

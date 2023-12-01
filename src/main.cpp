@@ -816,7 +816,7 @@ int main(int argc, char* argv[]) {
 
     }
 
-    versionSystem(argv[0]);
+    versionSystem();
 
     if (argc > 2) {
         for (int i = 2; i < argc; i++) {
