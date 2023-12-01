@@ -156,6 +156,7 @@ enum class TargetType {
     EXEC,
     SLIB,
     DLIB,
+    INTR, // interface
 };
 
 struct Target {
@@ -232,6 +233,8 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                     target.type = TargetType::SLIB;
                 } else if (type == "DLIB") {
                     target.type = TargetType::DLIB;
+                } else if (type == "INTR") {
+                    target.type = TargetType::INTR;
                 } else {
                     std::cerr << "Invalid target type: " << type << std::endl;
                     continue;
@@ -609,12 +612,24 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
                             link_flags += "-L" + (target.path / "build" / "bin").string() + " ";
                             link_flags += "-l" + target.name + " ";
                             // add the copy command
+
+                            if (!target.libs.empty()) {
+                                for (const std::string& lib : target.libs) {
+                                    link_flags += "-l" + lib + " ";
+                                }
+                            }
 #ifdef _WIN32
                             commands.push_back("copy " + (target.path / "build" / "bin" / (target.name + ".dll")).string() + " " + (t.path / "build" / "bin" / (target.name + ".dll")).string());
 #else
                             commands.push_back("cp " + (target.path / "build" / "bin" / ("lib" + target.name + ".so")).string() + " " + (t.path / "build" / "bin" / ("lib" + target.name + ".so")).string());
 #endif
                             break;
+                        case TargetType::INTR:
+                            if (!target.libs.empty()) {
+                                for (const std::string& lib : target.libs) {
+                                    link_flags += "-l" + lib + " ";
+                                }
+                            }
                         default:
                             break;
                     }
@@ -678,6 +693,9 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             commands.push_back(linkCmd + link_flags);
             std::create_directories(t.path / "build" / "obj");
             std::create_directories(t.path / "build" / "bin");
+        } break;
+        case TargetType::INTR: {
+            // do nothing
         } break;
         default:
             std::cout << "Not implemented yet" << std::endl;

@@ -7,7 +7,11 @@ add_executable(bscf src/main.cpp
         src/compiler.h
         src/builtins.h
         src/util.h
-        src/versioning.h)
+        src/versioning.h
+    lib/whereami/src/whereami.c
+        lib/whereami/src/whereami.h)
+
+target_include_directories(bscf PRIVATE lib/whereami/src)
 
 # postbuild copy version.txt to exe dir
 add_custom_command(TARGET bscf POST_BUILD
