@@ -134,6 +134,7 @@ enum class Command {
     LIB, // add a library to link to basically just adds -l[libname] to the link command
     INCDIR, // add an include directory to the target, basically just adds -I[dir] to the compile command for this target and dependent targets
     BUILTIN, // include a builtin library, very similar to GITINCLUDE but it does it from my github repo and the source
+    ALLOWSKIP, // allow the build system to skip this target if it is already built
 };
 
 std::unordered_map<std::string, Command> commandMap = {
@@ -149,6 +150,7 @@ std::unordered_map<std::string, Command> commandMap = {
         {"LIB", Command::LIB},
         {"INCDIR", Command::INCDIR},
         {"BUILTIN", Command::BUILTIN},
+        {"ALLOWSKIP", Command::ALLOWSKIP},
 };
 
 // A FileLib is not a target type, but it is a way of specifying a dependency on a sub project that either generates a static or dynamic library.
@@ -531,6 +533,16 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                     target.builtin = true;
                 }
                 targets.insert(targets.end(), includedTargets.begin(), includedTargets.end());
+            } break;
+            case Command::ALLOWSKIP: {
+                std::string targetName;
+                lineStream >> targetName;
+                for (Target& target : targets) {
+                    if (target.name == targetName) {
+                        target.builtin = true;
+                        break;
+                    }
+                }
             } break;
             default:
                 break;
