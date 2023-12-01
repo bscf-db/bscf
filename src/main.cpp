@@ -170,6 +170,7 @@ struct Target {
     std::vector<std::string> defines;
     std::vector<std::string> libs; // libs to link
     std::vector<std::string> includes; // include dirs // meant for libs
+    bool builtin = false;
 
 };
 
@@ -514,6 +515,9 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                     exit(1);
                 }
                 std::vector<Target> includedTargets = bscfInclude(path / "lib" / name, c);
+                for (Target& target : includedTargets) {
+                    target.builtin = true;
+                }
                 targets.insert(targets.end(), includedTargets.begin(), includedTargets.end());
             } break;
             default:
@@ -568,6 +572,27 @@ std::vector<std::string> bscfResolveIncludes(const Target& t, const std::vector<
     }
 
     return includes;
+}
+
+std::path bscfGetOuput(const Target& t) {
+    switch (t.type) {
+        case TargetType::EXEC:
+#ifdef _WIN32
+            return t.path / "build" / "bin" / (t.name + ".exe");
+#else
+            return t.path / "build" / "bin" / t.name;
+#endif
+        case TargetType::SLIB:
+            return t.path / "build" / "lib" / (LIB_PREFIX + t.name + LIB_SUFFIX);
+        case TargetType::DLIB:
+#ifdef _WIN32
+            return t.path / "build" / "bin" / (t.name + ".dll");
+#else
+            return t.path / "build" / "bin" / ("lib" + t.name + ".so");
+#endif
+        case TargetType::INTR:
+            return "";
+    }
 }
 
 std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const std::vector<Target>& targets) {
@@ -654,11 +679,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& obj : objs) {
                 linkCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
-#ifdef _WIN32
-            linkCmd += "-o " + t.path.string() + "/build/bin/" + t.name + ".exe";
-#else
-            linkCmd += "-o " + t.path.string() + "/build/bin/" + t.name;
-#endif
+            linkCmd += "-o " + bscfGetOuput(t).string();
             commands.push_back(linkCmd + link_flags);
             std::create_directories(t.path / "build" / "obj");
             std::create_directories(t.path / "build" / "bin");
@@ -668,7 +689,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& source : t.sources) {
                 commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags);
             }
-            std::string arCmd = c.ar + " rcs " + t.path.string() + "/build/lib/" + LIB_PREFIX + t.name + LIB_SUFFIX + " ";
+            std::string arCmd = c.ar + " rcs " + t.path.string() + bscfGetOuput(t).string() + " ";
             for (const std::string& obj : objs) {
                 arCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
@@ -685,11 +706,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& obj : objs) {
                 linkCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
-#ifdef _WIN32
-            linkCmd += "-o " + t.path.string() + "/build/bin/" + t.name + ".dll";
-#else
-            linkCmd += "-o " + t.path.string() + "/build/bin/" + t.name + ".so";
-#endif
+            linkCmd += "-o " + bscfGetOuput(t).string();
             commands.push_back(linkCmd + link_flags);
             std::create_directories(t.path / "build" / "obj");
             std::create_directories(t.path / "build" / "bin");
@@ -755,8 +772,16 @@ private:
         return true;
     }
 
-    bool buildTarget(const Target& t) {
+    bool buildTarget(const Target& t, bool force=false) {
         // first, check if the target has already been built
+        if (!force) {
+            // if target's output file exists, then it has already been built
+            std::path outputFile = bscfGetOuput(t);
+            if (std::exists(outputFile)) {
+                // target has already been built
+                return true;
+            }
+        }
         for (const Target& b : built) {
             if (b.name == t.name) {
                 // target has already been built
@@ -807,7 +832,7 @@ public:
     void buildTarget(const std::string& target) {
         for (const Target& t : targets) {
             if (t.name == target) {
-                buildTarget(t);
+                buildTarget(t, true);
                 return;
             }
         }
