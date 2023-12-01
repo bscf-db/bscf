@@ -775,7 +775,7 @@ private:
 
     bool buildTarget(const Target& t, bool force=false) {
         // first, check if the target has already been built
-        if (!force) {
+        if (!force && t.builtin) {
             // if target's output file exists, then it has already been built
             std::path outputFile = bscfGetOutput(t);
             if (std::exists(outputFile)) {
