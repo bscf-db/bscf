@@ -690,7 +690,7 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
             for (const std::string& source : t.sources) {
                 commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags);
             }
-            std::string arCmd = c.ar + " rcs " + t.path.string() + bscfGetOutput(t).string() + " ";
+            std::string arCmd = c.ar + " rcs " + bscfGetOutput(t).string() + " ";
             for (const std::string& obj : objs) {
                 arCmd += t.path.string() + "/build/obj/" + obj + " ";
             }
