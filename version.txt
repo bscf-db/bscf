@@ -1,1 +1,2 @@
-bscf v1.2.4
+bscf v1.3.0
+Allow different branches in gitinclude

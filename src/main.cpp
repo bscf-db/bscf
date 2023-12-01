@@ -328,8 +328,11 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                 }
                 std::string link;
                 std::string name;
+                std::string branch; // optional
                 lineStream >> link;
                 lineStream >> name;
+                lineStream >> branch;
+                branch = strip(branch);
                 std::string gitDir = (path / "lib" / name).string();
                 std::create_directories(path / "lib");
                 // if the directory already exists, git fetch it else git clone it
@@ -338,11 +341,19 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                     // if the file was changed locally, then the git pull won't fail, ut will say that it is up to date
                     // we need to make it realize that it is not up to date
                     // so we need to git add
-                    std::string cmd = "cd " + gitDir + " && git reset --hard " NULLIFY_CMD " && git pull origin" NULLIFY_CMD;
+                    std::string cmd;
+                    if (branch.empty())
+                        cmd = "cd " + gitDir + " && git reset --hard " NULLIFY_CMD " && git pull origin" NULLIFY_CMD;
+                    else
+                        cmd = "cd " + gitDir + " && git reset --hard " NULLIFY_CMD " && git pull origin " + branch + NULLIFY_CMD;
                     system(cmd.c_str());
                 } else {
                     std::cout << "Cloning " << name << std::endl;
-                    std::string cmd = "cd " + (path / "lib").string() + " && git clone " + link + " " + name + NULLIFY_CMD;
+                    std::string cmd;
+                    if (branch.empty())
+                        cmd = "cd " + (path / "lib").string() + " && git clone " + link + " " + name + NULLIFY_CMD;
+                    else
+                        cmd = "cd " + (path / "lib").string() + " && git clone -b " + branch + " " + link + " " + name + NULLIFY_CMD;
                     system(cmd.c_str());
                 }
                 std::vector<Target> includedTargets = bscfInclude(gitDir, c);
