@@ -18,3 +18,15 @@ add_custom_command(TARGET bscf POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_SOURCE_DIR}/version.txt
         ${CMAKE_CURRENT_BINARY_DIR}/version.txt)
+
+# if source dir/lib/whereami doesn't exist, clone it from https://github.com/gpakosz/whereami
+# if it does, pull latest
+
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/lib/whereami)
+    execute_process(COMMAND git clone https://github.com/gpakosz/whereami lib/whereami
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+else()
+    execute_process(COMMAND git pull --force
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/whereami)
+endif()

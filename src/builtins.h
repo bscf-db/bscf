@@ -31,7 +31,7 @@ const std::map<std::string, bscfBuiltin> BSCF_BUILTINS = {
 };
 
 
-bool getBuiltin(const std::string& name, const std::path& path) {
+bool getBuiltin(const std::string& name, const std::path& path, int depth=100) {
     if (BSCF_BUILTINS.find(name) == BSCF_BUILTINS.end()) {
         return false;
     }
@@ -50,6 +50,27 @@ bool getBuiltin(const std::string& name, const std::path& path) {
         system(cmd.c_str());
     } else {
         if (std::filesystem::exists(path / "lib" / name)) {
+            if (!std::filesystem::exists(path / "lib" / name / "proj.bscf")) {
+                // delete the folder and redownload
+
+                try {
+#ifdef _WIN32
+                    // on windows, .git doesn't have the correct permissions to delete it, so we need to allow it on the cmdline
+                    std::string cmd = "del /s /f /q " + replace((path / "lib" / name / ".git").string(), "/", "\\") + NULLIFY_CMD;
+                    system(cmd.c_str());
+#endif
+                    std::filesystem::remove_all(path / "lib" / name);
+                } catch (const std::exception& e) {
+                    std::cerr << "Error: failed to delete lib " << name << std::endl;
+                    std::cerr << e.what() << std::endl;
+                    exit(1);
+                }
+                if (depth == 0) {
+                    std::cerr << "Error: failed to generate lib " << name << std::endl;
+                    exit(1);
+                }
+                getBuiltin(name, path, depth - 1);
+            }
             std::string cmd = "cd " + (path / "lib" / name).string() + " && git reset --hard " NULLIFY_CMD " && git pull" + NULLIFY_CMD;
             system(cmd.c_str());
             return true;
