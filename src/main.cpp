@@ -812,8 +812,10 @@ std::vector<Target> bscfGenCache(const std::path& dir, const Compiler& c) {
             std::string sourceHash = getFileHash(t.path / source);
             sourceFileStream << nameHash << " " << sourceHash << std::endl;
         }
+        // add proj.bscf to the sources file
+        std::string projHash = getFileHash(t.path / "proj.bscf");
+        sourceFileStream << getFileNameHash(t.path / "proj.bscf") << " " << projHash << std::endl;
         sourceFileStream.close();
-
 
     }
     return targets;

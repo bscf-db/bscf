@@ -1,2 +1,2 @@
-bscf v1.3.4
-Add a force option to bypass the skipping of unchanged targets.
+bscf v1.3.5
+Add the proj.bscf file to the source hash to ensure project changes are compiled.
