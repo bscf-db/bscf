@@ -1,2 +1,2 @@
-bscf v1.3.1
-ALLOWSKIP command, to shorten build times
+bscf v1.3.3
+file hashes to avoid rebuilding targets

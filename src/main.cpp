@@ -255,7 +255,7 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                             std::vector<std::path> files = recurseDir(path / source);
                             for (std::path& file : files) {
                                 std::string ext = file.extension().string();
-                                if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx") {
+                                if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx" || ext == ".h" || ext == ".hpp" || ext == ".hh" || ext == ".hxx") {
                                     if (file.string() != " " && std::exists(file)) {
                                         target.sources.push_back(file.string());
                                     }
@@ -265,7 +265,7 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                             std::vector<std::path> files = globDir(path / source);
                             for (std::path& file : files) {
                                 std::string ext = file.extension().string();
-                                if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx") {
+                                if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx" || ext == ".h" || ext == ".hpp" || ext == ".hh" || ext == ".hxx") {
                                     if (file.string() != " " && std::exists(file)) {
                                         target.sources.push_back(file.string());
                                     }
@@ -281,7 +281,7 @@ std::vector<Target> bscfInclude(const std::path& path, const Compiler& c) {
                         std::vector<std::path> files = recurseDir(path / "src");
                         for (std::path& file : files) {
                             std::string ext = file.extension().string();
-                            if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx") {
+                            if (ext == ".c" || ext == ".cpp" || ext == ".cc" || ext == ".cxx" || ext == ".h" || ext == ".hpp" || ext == ".hh" || ext == ".hxx") {
                                 if (file.string() != " " && std::exists(file))
                                     target.sources.push_back(file.string());
                             }
@@ -573,8 +573,6 @@ std::string bscfSourceCmd(const Target& t, const Compiler& c, const std::string&
     } else if (ext == ".cpp" || ext == ".cxx") {
         objs.push_back(objname);
         return c.cxx + " -c " + source + " -o " + t.path.string() + "/build/obj/" + objname;
-    } else {
-        std::cout << "Skipping " << source << std::endl;
     }
     return "";
 }
@@ -698,7 +696,9 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
         case TargetType::EXEC: {
             std::vector<std::string> objs;
             for (const std::string& source : t.sources) {
-                commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags);
+                std::string src = bscfSourceCmd(t, c, source, objs);
+                if (src.empty()) continue;
+                commands.push_back(src + comp_flags);
             }
             std::string linkCmd = c.link + " ";
             for (const std::string& obj : objs) {
@@ -712,7 +712,9 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
         case TargetType::SLIB: {
             std::vector<std::string> objs;
             for (const std::string& source : t.sources) {
-                commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags);
+                std::string src = bscfSourceCmd(t, c, source, objs);
+                if (src.empty()) continue;
+                commands.push_back(src + comp_flags);
             }
             std::string arCmd = c.ar + " rcs " + bscfGetOutput(t).string() + " ";
             for (const std::string& obj : objs) {
@@ -725,7 +727,9 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
         case TargetType::DLIB: {
             std::vector<std::string> objs;
             for (const std::string& source : t.sources) {
-                commands.push_back(bscfSourceCmd(t, c, source, objs) + comp_flags + " -fPIC");
+                std::string src = bscfSourceCmd(t, c, source, objs);
+                if (src.empty()) continue;
+                commands.push_back(src + comp_flags + " -fPIC");
             }
             std::string linkCmd = c.link + " -shared ";
             for (const std::string& obj : objs) {
@@ -752,6 +756,33 @@ std::vector<std::string> bscfGenCmd(const Target& t, const Compiler& c, const st
     return commands;
 }
 
+std::string getFileHash(const std::path& p) {
+//    std::ifstream file(p, std::ios::binary);
+//    std::stringstream ss;
+//    ss << file.rdbuf();
+//    std::string contents = ss.str();
+//    return std::to_string(std::hash<std::string>{}(contents));
+    // collisions are possible, since we are hashing a file of arbitrary length to a string of pretty small length
+    // we will split the file into chunks
+    std::string final;
+
+    std::ifstream file(p, std::ios::binary);
+    std::vector<char> buffer(1024*8);
+    while (file.read(buffer.data(), buffer.size())) {
+        final += std::to_string(std::hash<std::string>{}(std::string(buffer.data(), buffer.size())));
+        final += "x";
+    }
+    final += std::to_string(std::hash<std::string>{}(std::string(buffer.data(), file.gcount())));
+    return final;
+
+
+
+}
+
+std::string getFileNameHash(const std::path& p) {
+    return std::to_string(std::hash<std::string>{}(p.string()));
+}
+
 std::vector<Target> bscfGenCache(const std::path& dir, const Compiler& c) {
     std::vector<Target> targets = bscfInclude(dir, c);
     for (Target& t : targets) {
@@ -763,6 +794,28 @@ std::vector<Target> bscfGenCache(const std::path& dir, const Compiler& c) {
             file << cmd << std::endl;
         }
         file.close();
+
+        // build/cache/targetname.sources
+        // contains a list of key value pairs
+        // key is hash of source file name
+        // value is source file hash/checksum
+        std::path sourceFile = t.path / "build" / "cache" / (t.name + ".sources");
+        if (std::exists(sourceFile)) {
+            // copy it to target.prev.sources
+            std::filesystem::path prev = (t.path / "build" / "cache" / (t.name + ".prev.sources"));
+            if (std::exists(prev)) {
+                std::filesystem::remove(prev);
+            }
+            std::filesystem::copy(sourceFile, prev, std::filesystem::copy_options::overwrite_existing);
+        }
+        std::ofstream sourceFileStream(sourceFile);
+        for (const std::string& source : t.sources) {
+            std::string nameHash = getFileNameHash(t.path / source);
+            std::string sourceHash = getFileHash(t.path / source);
+            sourceFileStream << nameHash << " " << sourceHash << std::endl;
+        }
+        sourceFileStream.close();
+
 
     }
     return targets;
@@ -779,6 +832,33 @@ private:
     // and if the target has not been built, build it, and add it to the built list
 
     bool buildTargetCMD(const Target& t) {
+        // check sources file
+        std::path sourceFile = t.path / "build" / "cache" / (t.name + ".sources");
+        std::path prevSourceFile = t.path / "build" / "cache" / (t.name + ".prev.sources");
+        bool skip = true;
+        if (std::exists(sourceFile) && std::exists(prevSourceFile)) {
+            // compare the two files
+            std::ifstream sourceFileStream(sourceFile);
+            std::ifstream prevSourceFileStream(prevSourceFile);
+            std::string sourceLine;
+            std::string prevSourceLine;
+            while (std::getline(sourceFileStream, sourceLine) && std::getline(prevSourceFileStream, prevSourceLine)) {
+                if (sourceLine != prevSourceLine) {
+                    // source file has changed
+                    // need to rebuild
+                    skip = false;
+                    break;
+                }
+            }
+        } else {
+            skip = false;
+        }
+        if (skip) {
+            // target has not changed, so we can skip it
+            std::cout << "# Skipping " << t.name << " as it has not changed" << std::endl;
+            return true;
+        }
+
         std::cout << "# Building " << t.name << std::endl;
         // just run commands in the t.path/build/cache/t.name.cache file
         std::ifstream file(t.path / "build" / "cache" / (t.name + ".target"));
