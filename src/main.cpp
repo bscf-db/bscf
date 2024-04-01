@@ -112,8 +112,6 @@ then the build dir will contain the following:
 #include "util.h"
 #include "versioning.h"
 
-bool echo = false;
-
 enum class Command {
     TARGET,
     INCLUDE,
@@ -833,30 +831,32 @@ private:
 
     bool buildTargetCMD(const Target& t) {
         // check sources file
-        std::path sourceFile = t.path / "build" / "cache" / (t.name + ".sources");
-        std::path prevSourceFile = t.path / "build" / "cache" / (t.name + ".prev.sources");
-        bool skip = true;
-        if (std::exists(sourceFile) && std::exists(prevSourceFile)) {
-            // compare the two files
-            std::ifstream sourceFileStream(sourceFile);
-            std::ifstream prevSourceFileStream(prevSourceFile);
-            std::string sourceLine;
-            std::string prevSourceLine;
-            while (std::getline(sourceFileStream, sourceLine) && std::getline(prevSourceFileStream, prevSourceLine)) {
-                if (sourceLine != prevSourceLine) {
-                    // source file has changed
-                    // need to rebuild
-                    skip = false;
-                    break;
+        if (!force) {
+            std::path sourceFile = t.path / "build" / "cache" / (t.name + ".sources");
+            std::path prevSourceFile = t.path / "build" / "cache" / (t.name + ".prev.sources");
+            bool skip = true;
+            if (std::exists(sourceFile) && std::exists(prevSourceFile)) {
+                // compare the two files
+                std::ifstream sourceFileStream(sourceFile);
+                std::ifstream prevSourceFileStream(prevSourceFile);
+                std::string sourceLine;
+                std::string prevSourceLine;
+                while (std::getline(sourceFileStream, sourceLine) && std::getline(prevSourceFileStream, prevSourceLine)) {
+                    if (sourceLine != prevSourceLine) {
+                        // source file has changed
+                        // need to rebuild
+                        skip = false;
+                        break;
+                    }
                 }
+            } else {
+                skip = false;
             }
-        } else {
-            skip = false;
-        }
-        if (skip) {
-            // target has not changed, so we can skip it
-            std::cout << "# Skipping " << t.name << " as it has not changed" << std::endl;
-            return true;
+            if (skip) {
+                // target has not changed, so we can skip it
+                std::cout << "# Skipping " << t.name << " as it has not changed" << std::endl;
+                return true;
+            }
         }
 
         std::cout << "# Building " << t.name << std::endl;
@@ -953,11 +953,17 @@ public:
         std::cout << "Target " << target << " not found" << std::endl;
         return false;
     }
+
+public:
+    bool echo = false;
+    bool force = false;
 };
 
 int main(int argc, char* argv[]) {
 
     int retval = 0;
+    bool echo = false;
+    bool force = false;
 
     std::path p = ".";
     Compiler c = defaultCompiler();
@@ -1010,6 +1016,8 @@ int main(int argc, char* argv[]) {
             std::cout << "Done" << std::endl;
 
             bscfBuilder builder(targets);
+            builder.echo = echo;
+            builder.force = force;
             bool f = builder.build();
             if (!f) {
                 retval = 1;
@@ -1028,11 +1036,17 @@ int main(int argc, char* argv[]) {
             echo = true;
         } else if (com == "noecho" || com == "ne") {
             echo = false;
+        } else if (com == "force" || com == "f") {
+            force = true;
+        } else if (com == "noforce" || com == "nf") {
+            force = false;
         } else {
             std::cout << "Generating build files... ";
             std::vector<Target> targets = bscfGenCache(p, c);
             std::cout << "Done" << std::endl;
             bscfBuilder builder(targets);
+            builder.echo = echo;
+            builder.force = force;
             bool f = builder.buildTarget(com);
             if (!f) {
                 retval = 1;

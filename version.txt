@@ -1,2 +1,2 @@
-bscf v1.3.3
-file hashes to avoid rebuilding targets
+bscf v1.3.4
+Add a force option to bypass the skipping of unchanged targets.
