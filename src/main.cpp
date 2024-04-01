@@ -976,12 +976,11 @@ int main(int argc, char* argv[]) {
             // build current project then exit (used for auto update)
             std::vector<Target> targets = bscfGenCache(p, c);
             bscfBuilder builder(targets);
+            builder.force = true;
             builder.build();
             return 0;
         }
         p = argv[1];
-
-
     }
 
     versionSystem();
